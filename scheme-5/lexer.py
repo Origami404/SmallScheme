@@ -1,14 +1,23 @@
 from util import *
 
+TokenLiteral = Literal[
+    'Quote', 
+    # 'Quasiquote','CommaAt', 'Comma', 
+    # 'VectorLeftBractet', 
+    'LeftBracket', 'RightBracket', 
+    'String', 'Character', 'Boolean', 'Number', 
+    'Identifier', 'Dot'
+]
+
 def eat_space(string: str) -> str:
-    space_pattern = regex('\s*')
+    space_pattern = regex(r'\s*')
     match = space_pattern.match(string)
     if match:
         string = string[len(match[0]):]
     return string
 
 # 实现一个可以向前看一个 token 的 lexer
-def tokenize(string: str) -> Iterable[Tuple[str, str]]:
+def tokenize(string: str) -> Iterable[Tuple[TokenLiteral, str]]:
     id_inital = r'a-zA-Z!$%&*\/:<=>?^_~'
     id_subsequent = f'{id_inital}0-9+-.@'
 

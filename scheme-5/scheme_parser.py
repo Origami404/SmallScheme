@@ -1,9 +1,22 @@
 from util import *
 from lexer import IterBuffer
 
-# like typed variable
+# 可能的AST的类型
+AstLiteral = Literal[
+    'Dot',          # 附加类型, 如果一个 Identifier 跟在 . 的后面, 它就会有这个类型
+    'Ellipsis',     # 附加类型, 如果一个 Identifier 在 ... 的前面, 它就会有这个类型
+    'ExprList',     # 主类型, 一个(<expr>*). sons 内存放的就是子节点(们)
+    'Identifier',   # 主类型, 一个 Identifier, 包括所有的 keyword.
+    'Quote',        # 主类型, 只有 ` 才会被赋予这个类型
+
+    # 主类型, 分别是对应的字面量. sons[0]存放了它们对应的Python值(int, str, bool, str)
+    'Number', 'String', 'Boolean', 'Character', 
+
+    'Program'       # 主类型, 适用于整个程序或者define/lambda/let的body那种不带括号的一堆表达式, 即<expr>*
+]
+
 class AstNode:
-    def __init__(self, types: Union[str, List[str]], sons: Union[List['AstNode'], str, int, bool], extra_data=None):
+    def __init__(self, types: Union[AstLiteral, List[AstLiteral]], sons: Union[List['AstNode'], str, int, bool], extra_data=None):
         self.types = make_list(types)
         self.sons = make_list(sons)
         self.extra_data = extra_data
@@ -16,10 +29,10 @@ class AstNode:
         else:
             raise NotImplementedError('Key should either a int or a string')
     
-    def is_type(self, type: str) -> bool:
+    def is_type(self, type: AstLiteral) -> bool:
         return type in self.types
     
-    def in_type(self, types: List[str]) -> bool:
+    def in_type(self, types: List[AstLiteral]) -> bool:
         return len(set(types).union(set(self.types))) != 0
 
     def data(self) -> Union[int, str, bool]:
@@ -27,7 +40,7 @@ class AstNode:
             raise RuntimeError(f'Not an atom node: {self.sons}')
         return self.sons[0]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[Literal['types', 'sons'], Any]:
         sons_dict = None
         if type(self.sons[0]) != type(AstNode('', [])):
             sons_dict = self.sons[0]
@@ -72,7 +85,7 @@ def parse(token_buffer: IterBuffer) -> AstNode:
     token, data = next(token_buffer)
     next_dot = False
 
-    def make_ast(types, sons, data=None) -> AstNode:
+    def make_ast(types: Union[List[AstLiteral], AstLiteral], sons, data=None) -> AstNode:
         if next_dot:
             types = make_list(types) + ['Dot']
         return AstNode(types, sons, data)

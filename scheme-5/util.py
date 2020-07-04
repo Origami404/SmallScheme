@@ -6,7 +6,7 @@ from re import compile as regex
 
 # Typing
 
-from typing import List, Dict, Callable, Generator, Iterable, TypeVar, Union, Tuple, Any
+from typing import List, Dict, Callable, Generator, Iterable, TypeVar, Union, Tuple, Any, Literal
 
 T, X, Y = TypeVar('T'), TypeVar('X'), TypeVar('Y')
 
