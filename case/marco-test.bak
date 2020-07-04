@@ -1,0 +1,6 @@
+#lang r5rs
+(define-syntax for-each
+  (syntax-rules ()
+               ((for-each proc l)
+                (map proc l))))
+
