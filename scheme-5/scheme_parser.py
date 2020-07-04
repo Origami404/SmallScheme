@@ -1,5 +1,6 @@
 from util import *
 from lexer import IterBuffer
+from lexer import TokenLiteral
 
 # 可能的AST的类型
 AstLiteral = Literal[
@@ -55,6 +56,8 @@ class AstNode:
         return str(self.to_dict())
     __repr__ = __str__
 
+    # 转换为 Scheme 程序
+    # 或者应该挑出来写成一个 unparse ?
     def to_scheme(self) -> str:
         if self.is_type('ExprList'):
             return f'({" ".join([s.to_scheme() for s in self.sons])})'
@@ -66,7 +69,9 @@ class AstNode:
             return str(self.data())
 
 # 接收一个解析BNF <x> 的 Parser, 然后把它一直解析到 <end_token> 为止. 也就是说解析 <x>* <end_token>
-def pluralize(token_buffer: IterBuffer, parser: Callable[[X], Y], end_token: T) -> Union[List[Y], Tuple[List[Y], T]]:
+# 当 end_token 为单个 TokenLiteral 时,                         返回解析出来的 List[AstNode]
+# 当 end_token 是一堆 TokenLiteral 时(一个 List[TokenLiteral]), 返回元组 (List[AstNode], Token); 其中第二个返回值为停止时的 Token
+def pluralize(token_buffer: IterBuffer, parser: Callable[[IterBuffer], AstNode], end_token: Union[TokenLiteral, List[TokenLiteral]]) -> Union[List[AstNode], Tuple[List[AstNode], Token]]:
     results = []
     ends = make_list(end_token)
     need_return_end = type(end_token) == type([])
@@ -85,6 +90,8 @@ def parse(token_buffer: IterBuffer) -> AstNode:
     token, data = next(token_buffer)
     next_dot = False
 
+    # 判断紧跟着一个 . 的expr; 语法 (<expr>+ . <expr>) 在 quote 里用来构造一个不以()结尾的列表
+    # 把 'Dot' 附加类型附到后面的 <expr> 节点里
     def make_ast(types: Union[List[AstLiteral], AstLiteral], sons, data=None) -> AstNode:
         if next_dot:
             types = make_list(types) + ['Dot']
@@ -116,6 +123,7 @@ def parse(token_buffer: IterBuffer) -> AstNode:
     elif token == 'Dot':
         next_dot = True
 
+# parse 的入口
 def parse_program(token_buffer: IterBuffer) -> AstNode:
     # AstNode('Program')
     sub_exprs: List[AstNode] = []

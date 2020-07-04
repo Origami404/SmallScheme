@@ -9,6 +9,8 @@ TokenLiteral = Literal[
     'Identifier', 'Dot'
 ]
 
+Token = Tuple[TokenLiteral, str]
+
 def eat_space(string: str) -> str:
     space_pattern = regex(r'\s*')
     match = space_pattern.match(string)
@@ -16,7 +18,6 @@ def eat_space(string: str) -> str:
         string = string[len(match[0]):]
     return string
 
-# 实现一个可以向前看一个 token 的 lexer
 def tokenize(string: str) -> Iterable[Tuple[TokenLiteral, str]]:
     id_inital = r'a-zA-Z!$%&*\/:<=>?^_~'
     id_subsequent = f'{id_inital}0-9+-.@'
