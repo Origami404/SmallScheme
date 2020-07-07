@@ -1,6 +1,6 @@
-from util import *
-from scheme_parser import AstNode
-from pre_eval import Environment
+from . import *
+from .scheme_parser import AstNode
+from .pre_eval import Environment
 
 class Symbol:
     def __init__(self, symbol: str):

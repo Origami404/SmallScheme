@@ -1,4 +1,5 @@
-from util import *
+from typing import Generic
+from . import *
 
 TokenLiteral = Literal[
     'Quote', 
@@ -64,29 +65,29 @@ def tokenize(string: str) -> Iterable[Tuple[TokenLiteral, str]]:
 
 
 # 一个可以将 [x, y, z ...] 的生成器变成 [(x, y), (y, z), (z, ?), ...] 的生成器的玩意
-class IterBuffer:
-    def __init__(self, generator, end_with=None, *args):
+class IterBuffer(Generic[T]):
+    def __init__(self, generator: Callable[..., Iterable[T]], end_with=None, *args):
         self.iterator = generator(*args)
         self.end_with = end_with
         # self.begin = True
 
-        self._now, self._after = None, None
+        # self._now, self._after = None, None
         try:
             self._now = next(self.iterator)
             self._after = next(self.iterator)
         except StopIteration:
             raise RuntimeError('Not enough elements: less than 2')
     
-    def now(self):
+    def now(self) -> T:
         return self._now
     
-    def after(self):
+    def after(self) -> T:
         return self._after
     
-    def __iter__(self):
+    def __iter__(self) -> 'IterBuffer':
         return self
     
-    def __next__(self):
+    def __next__(self) -> T:
         # if self.begin:
         #     self.begin = False
         #     return self._now

@@ -26,7 +26,7 @@ def lmap(f: Callable[[X], Y], iter: Iterable[X]) -> List[Y]:
     return list(map(f, iter))
 
 # 将 f 的第2, 3, ...个参数绑定起来; 即将 f(x, ...) 变成 f(x)
-def bind_tail(f: Callable[[X, ...], Y], *f_args) -> Callable[[X], Y]:
+def bind_tail(f: Callable[..., Y], *f_args) -> Callable[[X], Y]:
     return lambda x: f(x, *f_args)
 
 # 筛选掉为 None 的元素
@@ -55,3 +55,13 @@ def concat(list1: List[X], list2: List[X]) -> List[X]:
 from pprint import PrettyPrinter
 fprint = PrettyPrinter(2).pprint
 
+__all__ = [
+    'regex',
+
+    'List', 'Dict', 'Callable', 'Generator', 'Iterable', 
+    'TypeVar', 'Union', 'Tuple', 'Any', 'Literal',
+    'T', 'X', 'Y',
+
+    'reduce', 'make_list', 'lmap', 'bind_tail', 'not_none', 
+    'lnmap', 'union', 'concat', 'fprint'
+]

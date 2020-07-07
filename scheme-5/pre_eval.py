@@ -1,5 +1,5 @@
-from util import *
-from scheme_parser import AstNode
+from . import *
+from .scheme_parser import AstNode
 
 # 处理掉所有的 宏定义 与 宏展开
 

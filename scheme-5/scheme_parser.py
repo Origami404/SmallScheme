@@ -1,6 +1,5 @@
-from util import *
-from lexer import IterBuffer
-from lexer import TokenLiteral
+from . import *
+from .lexer import IterBuffer, TokenLiteral, Token
 
 # 可能的AST的类型
 AstLiteral = Literal[

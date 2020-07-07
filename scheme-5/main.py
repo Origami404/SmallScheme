@@ -1,9 +1,9 @@
 
 # 分词 -> 解析 -> 预求值: 宏定义 -> 预求值: 宏用 -> 求值 ->　．．． 
-from lexer import make_lexer
-from scheme_parser import parse_program
-from pre_eval import per_eval, Environment
-from util import fprint
+from .lexer import make_lexer
+from .scheme_parser import parse_program
+from .pre_eval import per_eval, Environment
+from . import fprint
 
 if __name__ == "__main__":
     program = ''' 
