@@ -16,18 +16,12 @@ AstLiteral = Literal[
 ]
 
 class AstNode:
-    def __init__(self, types: Union[AstLiteral, List[AstLiteral]], sons: Union[List['AstNode'], str, int, bool], extra_data=None):
+    def __init__(self, types: Union[AstLiteral, List[AstLiteral]], sons: Union[List['AstNode'], str, int, bool]):
         self.types = make_list(types)
         self.sons = make_list(sons)
-        self.extra_data = extra_data
     
-    def __getitem__(self, key: Union[str, int]):
-        if type(key) == type(''):
-            return self.extra_data[key]
-        elif type(key) == type(0):
-            return self.sons[key]
-        else:
-            raise NotImplementedError('Key should either a int or a string')
+    def __getitem__(self, key: int) -> 'AstNode':
+        return self.sons[key]
     
     def is_type(self, type: AstLiteral) -> bool:
         return type in self.types
@@ -91,10 +85,10 @@ def parse(token_buffer: IterBuffer) -> AstNode:
 
     # 判断紧跟着一个 . 的expr; 语法 (<expr>+ . <expr>) 在 quote 里用来构造一个不以()结尾的列表
     # 把 'Dot' 附加类型附到后面的 <expr> 节点里
-    def make_ast(types: Union[List[AstLiteral], AstLiteral], sons, data=None) -> AstNode:
+    def make_ast(types: Union[List[AstLiteral], AstLiteral], sons) -> AstNode:
         if next_dot:
             types = make_list(types) + ['Dot']
-        return AstNode(types, sons, data)
+        return AstNode(types, sons)
     # print(f'Now token: ({token}, {data})')
 
     # expression list
