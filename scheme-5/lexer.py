@@ -19,7 +19,7 @@ def eat_space(string: str) -> str:
         string = string[len(match[0]):]
     return string
 
-def tokenize(string: str) -> Iterable[Tuple[TokenLiteral, str]]:
+def tokenize(string: str) -> Iterable[Token]:
     id_inital = r'a-zA-Z!$%&*\/:<=>?^_~'
     id_subsequent = f'{id_inital}0-9+-.@'
 
@@ -66,15 +66,15 @@ def tokenize(string: str) -> Iterable[Tuple[TokenLiteral, str]]:
 
 # 一个可以将 [x, y, z ...] 的生成器变成 [(x, y), (y, z), (z, ?), ...] 的生成器的玩意
 class IterBuffer(Generic[T]):
-    def __init__(self, generator: Callable[..., Iterable[T]], end_with=None, *args):
-        self.iterator = generator(*args)
-        self.end_with = end_with
+    def __init__(self, generator: Callable[..., Iterable[T]], end_with: T=None, *args):
+        self.iterator: Iterable[T] = generator(*args)
+        self.end_with: T = end_with
         # self.begin = True
 
         # self._now, self._after = None, None
         try:
-            self._now = next(self.iterator)
-            self._after = next(self.iterator)
+            self._now: T = next(self.iterator)
+            self._after: T = next(self.iterator)
         except StopIteration:
             raise RuntimeError('Not enough elements: less than 2')
     

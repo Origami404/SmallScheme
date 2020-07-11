@@ -1,5 +1,6 @@
 from . import *
 from .scheme_parser import AstNode
+from typing import Optional
 
 # 处理掉所有的 宏定义 与 宏展开
 
@@ -32,7 +33,7 @@ class Environment:
 
 # Python 默认是 pass-by-reference 的, env可能会随着传到子节点那里被子节点修改
 # TODO: 修改以使其遵守作用域规则: 目前: 基于代码文本上前后的; 预期: 遵循scope的 
-def per_eval(ast: AstNode, env: Environment) -> AstNode:
+def per_eval(ast: AstNode, env: Environment) -> Optional[AstNode]:
 
     # 对于单个 Identifier 的宏替换
     if ast.is_type('Identifier') and env.has(ast.data()):
@@ -71,7 +72,7 @@ def per_eval(ast: AstNode, env: Environment) -> AstNode:
     return ast
 
 # 构造出 syntax-rule 并顺路绑定上
-def eval_marco_define(operands: AstNode, now_env: Environment) -> None:
+def eval_marco_define(operands: List[AstNode], now_env: Environment) -> None:
     name, body = operands[0].data(), operands[1]
 
     syntax_rule_operands = body.sons[1:] # skip the keyword 'syntax-rule'
@@ -82,7 +83,8 @@ def eval_marco_define(operands: AstNode, now_env: Environment) -> None:
 # 具体到 Python 代码, Scheme 里的一个 宏 其实就是一个对 AstNode 进行变换的函数 use(ast: AstNode) -> AstNode
 # 它就是在构造函数 use
 def make_syntax_rule(operands: List[AstNode]) -> Callable[[AstNode], AstNode]:
-    literals = lmap(lambda node: node[0], operands[0])
+    # 它第一个一定要是一个类型为'ExprList'的AstNode
+    literals = lmap(lambda node: node[0], operands[0]) # type: ignore
     cases = lmap(lambda node: (make_pattern_tree(node[0], literals), node[1]), operands[1:])
 
     def use(expr: AstNode) -> AstNode:
@@ -104,7 +106,8 @@ def transform(template: AstNode, lexical_binds: Dict[str, AstNode]) -> AstNode:
         return AstNode('ExprList', lmap(bind_tail(transform, lexical_binds), template.sons))
     
     elif template.is_type('Identifier') and template[0] in lexical_binds:
-        return lexical_binds[template[0]]
+        # 已经验证过这个叫template的ASTNode一定是Identifier了
+        return lexical_binds[template[0]] # type: ignore
     
     return template
 
@@ -142,14 +145,14 @@ def make_pattern_literal(ast: AstNode, literals: List[str]) -> PatternMatcher:
 # 处理 (<pattern>*) 跟 (<pattern>* <pattern> ...)
 def make_pattern_list(ast: AstNode, literals: List[str]) -> PatternMatcher:
     last = ast[-1]
-    if last.is_type('Ellispsis'):
+    if last.is_type('Ellipsis'):
         return make_pattern_ellipsis_list(ast, literals)
     else:
         return make_pattern_normal_list(ast, literals)
 
 # 处理 (<pattern> *)
 def make_pattern_normal_list(ast: AstNode, literals: List[str]) -> PatternMatcher:
-    sub_patterns = lmap(bind_tail(make_pattern_tree, literals), ast)
+    sub_patterns = lmap(bind_tail(make_pattern_tree, literals), ast.sons)
 
     def match(exprs: AstNode):
         # 对 exprs 的基本检查
@@ -172,11 +175,11 @@ def make_pattern_normal_list(ast: AstNode, literals: List[str]) -> PatternMatche
 
 # 处理 (<pattern>* <pattern> ...)
 def make_pattern_ellipsis_list(ast: AstNode, literals: List[str]) -> PatternMatcher:
-    sub_patterns = lmap(bind_tail(make_pattern_tree, literals), ast)
+    sub_patterns = lmap(bind_tail(make_pattern_tree, literals), ast.sons)
     normal_subs, ellipsis_sub = sub_patterns[:-1], sub_patterns[-1]
 
     def match(exprs):
-        if not exprs.is_type('ExprList') or len(normal_subs.sons) > len(sub_patterns):
+        if not exprs.is_type('ExprList') or len(normal_subs) > len(sub_patterns):
             return False, {}
         
         total_result = {}

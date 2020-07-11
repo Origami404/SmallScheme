@@ -1,3 +1,4 @@
+from typing import Sized
 from . import *
 from .lexer import IterBuffer, TokenLiteral, Token
 
@@ -16,11 +17,11 @@ AstLiteral = Literal[
 ]
 
 class AstNode:
-    def __init__(self, types: Union[AstLiteral, List[AstLiteral]], sons: Union[List['AstNode'], str, int, bool]):
+    def __init__(self, types: Union[AstLiteral, List[AstLiteral]], sons: Union[List['AstNode'], T]):
         self.types = make_list(types)
         self.sons = make_list(sons)
     
-    def __getitem__(self, key: int) -> 'AstNode':
+    def __getitem__(self, key: int) -> Union['AstNode', T]:
         return self.sons[key]
     
     def is_type(self, type: AstLiteral) -> bool:
@@ -29,14 +30,14 @@ class AstNode:
     def in_type(self, types: List[AstLiteral]) -> bool:
         return len(set(types).union(set(self.types))) != 0
 
-    def data(self) -> Union[int, str, bool]:
-        if len(self.sons) != 1:
+    def data(self) -> T:
+        if isinstance(self.sons[0], AstNode):
             raise RuntimeError(f'Not an atom node: {self.sons}')
         return self.sons[0]
 
     def to_dict(self) -> Dict[Literal['types', 'sons'], Any]:
         sons_dict = None
-        if type(self.sons[0]) != type(AstNode('', [])):
+        if not isinstance(self.sons[0], AstNode):
             sons_dict = self.sons[0]
         else: sons_dict = list(map(AstNode.to_dict, self.sons))
 
@@ -48,6 +49,9 @@ class AstNode:
     def __str__(self):
         return str(self.to_dict())
     __repr__ = __str__
+
+    def __len__(self):
+        return len(self.sons)
 
     # 转换为 Scheme 程序
     # 或者应该挑出来写成一个 unparse ?
@@ -115,6 +119,8 @@ def parse(token_buffer: IterBuffer) -> AstNode:
             return make_ast('Identifier', str(data))
     elif token == 'Dot':
         next_dot = True
+    
+    raise RuntimeError('Unknown Token')
 
 # parse 的入口
 def parse_program(token_buffer: IterBuffer) -> AstNode:

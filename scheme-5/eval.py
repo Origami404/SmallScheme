@@ -28,26 +28,27 @@ def eval(ast: AstNode, env: Environment) -> ValueType:
     
     # form: without marco
     if ast.is_type('ExprList'):
+        new_env = Environment(env) # new scope
         proc_ast, arg_asts = ast[0], ast[1:]
 
         def is_special(keyword: str) -> bool:
             return proc_ast.is_type('Identifier') and proc_ast.data() == keyword
 
         if is_special('lambda'):
-            return make_lambda(arg_asts, env)
+            return make_lambda(arg_asts, new_env)
         elif is_special('set!'):
             name, expr = arg_asts[0].data(), arg_asts[1]
-            env.bind(name, eval(expr, env))
+            new_env.bind(name, eval(expr, new_env))
             return env.get(name)
         elif is_special('if'):
-            cond = eval(arg_asts[0], env)
-            return eval(arg_asts[1 if cond else 2], env)
+            cond = eval(arg_asts[0], new_env)
+            return eval(arg_asts[1 if cond else 2], new_env)
+        elif is_special('let'):
+            return eval_let(ast, new_env)
 
     if ast.is_type('Program'):
-        fronts, end = ast.sons[:-1], ast[-1]
-        for front in fronts:
-            eval(front, env)
-        return eval(end, env)
+        new_env = Environment(env) # new scope
+        return eval_list_ast(ast.sons, new_env)
     
 def eval_quote(ast: AstNode, env: Environment) -> ValueType:
     if ast.in_type(self_eval_types):
@@ -106,3 +107,23 @@ def make_lambda(operands: List[AstNode], env: Environment) -> Procedure:
     
     return proc
 
+def eval_list_ast(asts: List[AstNode], env: Environment):
+    fronts, end = asts[:-1], asts[-1]
+    for front in fronts:
+        eval(front, env)
+    return eval(end, env)
+
+
+def error_case(cond: bool, text: str) -> None:
+    if cond:
+        raise RuntimeError(text)
+
+def eval_let(ast: AstNode, env: Environment) -> ValueType:
+    binds: List[AstNode] = ast[1].sons
+    for bind_ast in binds:
+        error_case(not bind_ast.is_type('ExprList') or len(bind_ast) != 2, 'Invaild binds in let')
+
+        name, expr = bind_ast[0], bind_ast[1]
+        error_case(not name.is_type('Identifier'), "Bind's first argument should be an identifier")
+        
+        

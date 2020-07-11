@@ -1,12 +1,12 @@
 
 # Regex
 
-from re import compile as regex
+from re import L, compile as regex
 
 
 # Typing
 
-from typing import List, Dict, Callable, Generator, Iterable, TypeVar, Union, Tuple, Any, Literal
+from typing import List, Dict, Callable, Generator, Iterable, TypeVar, Union, Tuple, Any, Literal, overload
 # 常用的用来表示泛型类型的字母, 方便后面泛型函数的定义
 T, X, Y = TypeVar('T'), TypeVar('X'), TypeVar('Y')
 
@@ -15,10 +15,13 @@ T, X, Y = TypeVar('T'), TypeVar('X'), TypeVar('Y')
 from functools import reduce
 
 # 把data变成一个list
-def make_list(data: Any) -> list:
-    if isinstance(data, list):
-        return data
-    else: return [data]
+@overload
+def make_list(data: List[T]) -> List[T]: ...
+@overload
+def make_list(data: T) -> List[T]: ...
+
+def make_list(data):
+    return [data] if not isinstance(data, list) else data
 
 # 把 map 返回的 Iterable 变成 list
 # 可以看做是即刻求值版 map
