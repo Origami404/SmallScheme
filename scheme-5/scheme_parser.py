@@ -28,7 +28,7 @@ class AstNode:
         return type in self.types
     
     def in_type(self, types: List[AstLiteral]) -> bool:
-        return len(set(types).union(set(self.types))) != 0
+        return len(set(types).union(set(self.types))) != 0 # type: ignore
 
     def data(self) -> T:
         if isinstance(self.sons[0], AstNode):
@@ -91,8 +91,8 @@ def parse(token_buffer: IterBuffer) -> AstNode:
     # 把 'Dot' 附加类型附到后面的 <expr> 节点里
     def make_ast(types: Union[List[AstLiteral], AstLiteral], sons) -> AstNode:
         if next_dot:
-            types = make_list(types) + ['Dot']
-        return AstNode(types, sons)
+            types = make_list(types) + ['Dot'] # type: ignore # I'm sure!
+        return AstNode(types, sons)            # type: ignore
     # print(f'Now token: ({token}, {data})')
 
     # expression list

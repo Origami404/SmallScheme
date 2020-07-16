@@ -132,13 +132,15 @@ def make_pattern_tree(ast: AstNode, literals: List[str]) -> PatternMatcher:
             return make_pattern_literal(ast, literals)
         else:
             return make_pattern_identifier(ast, literals)
+    raise RuntimeError('Invaild pattern')
 
 # 简单的 Pattern 处理
 def make_pattern_identifier(ast: AstNode, literals: List[str]) -> PatternMatcher:
-    return lambda expr: (True, {ast.sons[0]: expr})
+    # Python would never support annotation in lambda
+    return lambda expr: (True, {ast.sons[0]: expr}) # type: ignore 
 
 def make_pattern_literal(ast: AstNode, literals: List[str]) -> PatternMatcher:
-    return lambda expr: expr.is_type('Identifier') and expr[0] == ast[0], {}
+    return lambda expr: expr.is_type('Identifier') and expr[0] == ast[0], {} # type: ignore
 
 # 处理 列表型的 Pattern
 

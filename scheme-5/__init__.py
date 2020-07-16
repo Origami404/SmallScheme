@@ -8,7 +8,7 @@ from re import L, compile as regex
 
 from typing import List, Dict, Callable, Generator, Iterable, TypeVar, Union, Tuple, Any, Literal, overload
 # 常用的用来表示泛型类型的字母, 方便后面泛型函数的定义
-T, X, Y = TypeVar('T'), TypeVar('X'), TypeVar('Y')
+T, X, Y = TypeVar('T', covariant=True), TypeVar('X'), TypeVar('Y')
 
 # small tools 
 
