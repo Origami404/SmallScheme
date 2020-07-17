@@ -34,12 +34,13 @@ class Environment:
 # Python 默认是 pass-by-reference 的, env可能会随着传到子节点那里被子节点修改
 # TODO: 修改以使其遵守作用域规则: 目前: 基于代码文本上前后的; 预期: 遵循scope的 
 def per_eval(ast: AstNode, env: Environment) -> Optional[AstNode]:
-
     # 对于单个 Identifier 的宏替换
     if ast.is_type('Identifier') and env.has(ast.data()):
         transformer = env.get(ast.data())
         return transformer(ast)
     
+    pre_eval_sons = lambda: lnmap(bind_tail(per_eval, env), ast.sons)
+
     # 对于 ExprList ...
     if ast.is_type('ExprList'):
         operator, operands = ast[0], ast.sons[1:]
@@ -55,19 +56,10 @@ def per_eval(ast: AstNode, env: Environment) -> Optional[AstNode]:
                 return transformer(ast)
         
         # 如果都不是上面的情况, 还要递归下去处理它的子节点
-        return AstNode('ExprList', lnmap(bind_tail(per_eval, env), ast.sons))
+        return AstNode('ExprList', pre_eval_sons())
 
-    # TODO: 需要重构
-    if ast.is_type('Program'):
-        new_sub_ast = []
-        for sub_ast in ast.sons:
-            new_ast = per_eval(sub_ast, env)
-            if new_ast:
-                new_sub_ast.append(new_ast)
-            # print(env.binds)
-        return AstNode('Program', new_sub_ast)
-
-        # return AstNode('Program', lnmap(bind_tail(per_eval, env), ast.sons))
+    if ast.in_type(['Quote', 'Program']):
+        return AstNode(ast.types, pre_eval_sons())
 
     return ast
 

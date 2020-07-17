@@ -65,3 +65,13 @@ def list_ref(l: Pair, idx: Number) -> SchValue:
     if idx == 0:
         return car(l)
     return list_ref(l, idx - 1)
+
+inital_marco = [
+'''
+(define-syntax define
+    (syntax-rule ()
+        (define (name args ...)) (define-var name (lambda args ...)) 
+        (define name var)        (define-var name var              )))
+'''
+
+]

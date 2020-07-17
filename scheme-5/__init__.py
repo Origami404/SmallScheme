@@ -23,6 +23,8 @@ def make_list(data: T) -> List[T]: ...
 def make_list(data):
     return [data] if not isinstance(data, list) else data
 
+for_each = map
+
 # 把 map 返回的 Iterable 变成 list
 # 可以看做是即刻求值版 map
 def lmap(f: Callable[[X], Y], iter: Iterable[X]) -> List[Y]:

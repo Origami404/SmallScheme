@@ -1,4 +1,4 @@
-from typing import Sized
+from typing import Sized, overload
 from . import *
 from .lexer import IterBuffer, TokenLiteral, Token
 
@@ -17,8 +17,16 @@ AstLiteral = Literal[
 ]
 
 class AstNode:
-    def __init__(self, types: Union[AstLiteral, List[AstLiteral]], sons: Union[List['AstNode'], T]):
-        self.types = make_list(types)
+    @overload
+    def __init__(self, types: List[AstLiteral], sons: Union[List['AstNode'], T]) -> None: ...
+    @overload
+    def __init__(self, type: AstLiteral, sons: Union[List['AstNode'], T]) -> None: ... 
+
+    def __init__(self, types, sons):
+        if isinstance(types, list):
+            self.types = types
+        else: 
+            self.types = [types]
         self.sons = make_list(sons)
     
     def __getitem__(self, key: int) -> Union['AstNode', T]:
@@ -28,7 +36,7 @@ class AstNode:
         return type in self.types
     
     def in_type(self, types: List[AstLiteral]) -> bool:
-        return len(set(types).union(set(self.types))) != 0 # type: ignore
+        return len(set(types).union(set(self.types))) != 0 
 
     def data(self) -> T:
         if isinstance(self.sons[0], AstNode):
