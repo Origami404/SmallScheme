@@ -1,6 +1,6 @@
 from typing import overload
 from . import *
-from .scheme_parser import AstLiteral, AstNode
+from .parser import AstLiteral, AstNode
 from .pre_eval import Environment
 
 class Symbol:
@@ -84,6 +84,11 @@ def eval(ast: AstNode, env: Environment) -> ValueType:
     raise RuntimeError('Invaild ast.')
     
 
+def eval_applicaiton(proc_ast: AstNode, arg: List[AstNode], env: Environment) -> ValueType:
+    proc = eval(proc_ast, env)
+    arg_vals = lmap(bind_tail(eval, env), arg)
+    return proc(arg_vals, env) # type: ignore
+
 def eval_define(operands: List[AstNode], env: Environment) -> ValueType:
     assuming_len(operands, 2)
     
@@ -92,8 +97,6 @@ def eval_define(operands: List[AstNode], env: Environment) -> ValueType:
     env.bind(name, var)
     return var
 
-def eval_lambda(operands: List[AstNode], env: Environment) -> ValueType:
-    return make_lambda(operands, env)
 
 def eval_set(operands: List[AstNode], env: Environment) -> ValueType:
     assuming_len(operands, 2)
@@ -108,6 +111,28 @@ def eval_set(operands: List[AstNode], env: Environment) -> ValueType:
 
     return var
 
+def eval_if(operands: List[AstNode], env: Environment) -> ValueType:
+    assuming_len(operands, 3)
+    cond = eval(operands[0], env)
+    if cond:
+        return eval(operands[1], env)
+    else:
+        return eval(operands[2], env)
+
+def eval_cond(operands: List[AstNode], env: Environment) -> ValueType:
+    not_empty(operands)
+    for branch in operands:
+        assuming_len(branch.sons, 2)
+        cond_ast, val_ast = branch[0], branch[1]
+        cond = eval(cond_ast, env)
+
+        if cond:
+            return eval(val_ast, env)
+
+    return False
+
+def eval_begin(asts: List[AstNode], env: Environment) -> ValueType:
+    return eval_in_order(asts, env)
 
 def eval_in_order(asts: List[AstNode], env: Environment) -> ValueType:
     not_empty(asts, 'Empty body is not be allowed')
@@ -185,3 +210,5 @@ def make_lambda(operands: List[AstNode], env: Environment) -> Procedure:
     
     return proc
      
+def eval_lambda(operands: List[AstNode], env: Environment) -> ValueType:
+    return make_lambda(operands, env)

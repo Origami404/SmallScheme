@@ -1,7 +1,35 @@
 from re import S
-from typing import NewType
+from typing import NewType, Generic
 from . import *
-from .pre_eval import Environment
+
+# eval 时的环境, 其实应该就相当于标准库的 ChainMap ?
+class Environment(Generic[T]):
+    def __init__(self, father: 'Environment'=None, inital={}) -> None:
+        self.father = father
+        self.binds = inital
+
+    def bind(self, name: str, var: T) -> 'Environment[T]':
+        self.binds[name] = var
+        return self
+    
+    def get(self, name: str) -> T:
+        if name not in self.binds:
+            if self.father:
+                return self.father.get(name)
+            raise RuntimeError(f'Unbound name: {name}')
+        return self.binds[name]
+    
+    def has(self, name: str) -> bool:
+        try:
+            self.get(name)
+        except RuntimeError:
+            return False
+        return True
+    
+    def update(self, binds: Dict[str, T]) -> 'Environment[T]':
+        self.binds = union(self.binds, binds)
+        return self
+
 
 # typing definition
 Number = int

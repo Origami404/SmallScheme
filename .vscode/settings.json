@@ -52,7 +52,6 @@
     "C_Cpp.default.cppStandard": "c++20",
     "C_Cpp.default.cStandard": "c11",
     "python.formatting.provider": "yapf",
-    "python.pythonPath": "E:\\App\\CLITools\\python\\python.exe",
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true
 }

@@ -1,8 +1,8 @@
 
 # 分词 -> 解析 -> 预求值: 宏定义 -> 预求值: 宏用 -> 求值 ->　．．． 
 from .lexer import make_lexer
-from .scheme_parser import parse_program
-from .pre_eval import per_eval, Environment
+from .parser import parse_program
+from .pre_eval import pre_eval, Environment
 from . import fprint
 
 if __name__ == "__main__":
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     '''
     token_buffer = make_lexer(program)
     ast = parse_program(token_buffer)
-    trans_ast = per_eval(ast, Environment(None))
+    trans_ast = pre_eval(ast, Environment(None))
     
     # fprint(ast.to_dict())
 

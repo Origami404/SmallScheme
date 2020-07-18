@@ -73,8 +73,8 @@ class IterBuffer(Generic[T]):
 
         # self._now, self._after = None, None
         try:
-            self._now: T = next(self.iterator)
-            self._after: T = next(self.iterator)
+            self._now: T = next(self.iterator) # type: ignore
+            self._after: T = next(self.iterator) # type: ignore
         except StopIteration:
             raise RuntimeError('Not enough elements: less than 2')
     
@@ -96,7 +96,7 @@ class IterBuffer(Generic[T]):
         
         old, new = self._now, None
         try:
-            new = next(self.iterator)
+            new = next(self.iterator) # type: ignore
         except StopIteration:
             self._now, self._after = self._after, self.end_with
         else:

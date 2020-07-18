@@ -1,45 +1,21 @@
 from . import *
-from .scheme_parser import AstNode
-from typing import Optional
+from .parser import AstNode
+from typing import Generic, Optional
+from .runtime import Environment
 
 # 处理掉所有的 宏定义 与 宏展开
 
-# eval 时的环境, 其实应该就相当于标准库的 ChainMap ?
-class Environment:
-    def __init__(self, father: 'Environment'=None, inital={}):
-        self.father = father
-        self.binds = inital
-
-    def bind(self, name: str, var: Any) -> None:
-        self.binds[name] = var
-    
-    def get(self, name: str) -> Any:
-        if name not in self.binds:
-            if self.father:
-                return self.father.get(name)
-            raise RuntimeError(f'Unbound name: {name}')
-        return self.binds[name]
-    
-    def has(self, name: str) -> bool:
-        try:
-            self.get(name)
-        except RuntimeError:
-            return False
-        return True
-    
-    def update(self, binds: Dict[str, Any]) -> 'Environment':
-        self.binds = union(self.binds, binds)
-        return self
+MarcoEnvironment = Environment[Callable[[AstNode], AstNode]]
 
 # Python 默认是 pass-by-reference 的, env可能会随着传到子节点那里被子节点修改
 # TODO: 修改以使其遵守作用域规则: 目前: 基于代码文本上前后的; 预期: 遵循scope的 
-def per_eval(ast: AstNode, env: Environment) -> Optional[AstNode]:
+def pre_eval(ast: AstNode, env: MarcoEnvironment) -> Optional[AstNode]:
     # 对于单个 Identifier 的宏替换
     if ast.is_type('Identifier') and env.has(ast.data()):
         transformer = env.get(ast.data())
-        return transformer(ast)
+        return pre_eval(transformer(ast), env) # type: ignore
     
-    pre_eval_sons = lambda: lnmap(bind_tail(per_eval, env), ast.sons)
+    pre_eval_sons = lambda: lnmap(bind_tail(pre_eval, env), ast.sons)
 
     # 对于 ExprList ...
     if ast.is_type('ExprList'):
@@ -53,7 +29,7 @@ def per_eval(ast: AstNode, env: Environment) -> Optional[AstNode]:
             # 如果这个 ExprList 的开头是环境里的 keyword, 就进行 宏展开
             if env.has(operator.data()):
                 transformer = env.get(ast.data())
-                return transformer(ast)
+                return pre_eval(transformer(ast), env) # type: ignore
         
         # 如果都不是上面的情况, 还要递归下去处理它的子节点
         return AstNode('ExprList', pre_eval_sons())
@@ -64,7 +40,7 @@ def per_eval(ast: AstNode, env: Environment) -> Optional[AstNode]:
     return ast
 
 # 构造出 syntax-rule 并顺路绑定上
-def eval_marco_define(operands: List[AstNode], now_env: Environment) -> None:
+def eval_marco_define(operands: List[AstNode], now_env: MarcoEnvironment) -> None:
     name, body = operands[0].data(), operands[1]
 
     syntax_rule_operands = body.sons[1:] # skip the keyword 'syntax-rule'
