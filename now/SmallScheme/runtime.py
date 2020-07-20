@@ -30,6 +30,18 @@ class Environment(Generic[T]):
         self.binds = union(self.binds, binds)
         return self
 
+def assuming_len_at_least(l: List[Any], length: int, message: str='Bad syntax') -> None:
+    if len(l) < length:
+        raise RuntimeError(message)
+
+def not_empty(l: List[Any], message: str='Bad syntax') -> None:
+    assuming_len_at_least(l, 0, message)
+
+def assuming_len(l: List[Any], length: int, message: str='Bad syntax') -> None:
+    if len(l) != length:
+        raise RuntimeError(message)
+
+
 
 # typing definition
 Number = int

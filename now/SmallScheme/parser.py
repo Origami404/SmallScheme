@@ -1,4 +1,5 @@
-from typing import Generic, Iterator, Sized, overload
+from os import sendfile
+from typing import Generic, Iterator, Sized, overload, Type
 from . import *
 from .lexer import IterBuffer, TokenLiteral, Token
 from abc import ABC, abstractmethod
@@ -14,6 +15,16 @@ class AstNode:
     def to_scheme(self) -> str:
         raise RuntimeError('Unsupported operation')
 
+    @abstractmethod
+    def to_dict(self) -> Dict[str, Any]:
+        raise RuntimeError('Unsupported operation')
+
+    def as_node(self, node_class: Type['LeafNodeType']) -> 'LeafNodeType':
+        if isinstance(self, node_class):
+            return self # type: ignore
+        raise TypeError('Not an special node')
+
+
 class AtomNode(AstNode, Generic[T]):
     def __init__(self, data: T, dot: bool=False, ellipsis: bool=False) -> None:
         super().__init__(dot, ellipsis)
@@ -26,7 +37,10 @@ class AtomNode(AstNode, Generic[T]):
         return self._data
     
     def to_scheme(self) -> str:
-        return str(self.data)
+        return str(self._data)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return self._data
 
 class IdentifierNode(AtomNode[str]): pass
 class NumberNode(AtomNode[int]):     pass
@@ -41,7 +55,10 @@ class ExprListNode(AstNode):
 
     def as_list(self) -> List[AstNode]:
         return self.sons
-    
+
+    def split(self) -> Tuple[AstNode, List[AstNode]]:
+        return self.sons[0], self.sons[1:]
+
     def first_is(self, identifier: str) -> bool:
         first_ast = self.sons[0]
         return isinstance(first_ast, IdentifierNode) and first_ast.is_data(identifier)
@@ -61,6 +78,15 @@ class ExprListNode(AstNode):
 
     def to_scheme(self) -> str:
         return f'({" ".join([o.to_scheme() for o in self.sons])})'
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            '0-type': 'ExprList',
+            '1-sons': [o.to_dict() for o in self.sons]
+        }
+
+LeafNodeType = TypeVar('LeafNodeType', IdentifierNode, NumberNode, StringNode, BooleanNode, CharacterNode, ExprListNode)
+
 
 # 接收一个解析BNF <x> 的 Parser, 然后把它一直解析到 <end_token> 为止. 也就是说解析 <x>* <end_token>
 # 当 end_token 为单个 TokenLiteral 时,                         返回解析出来的 List[AstNode]
@@ -123,5 +149,9 @@ def parse(token_buffer: IterBuffer) -> AstNode:
 # parse 的入口
 def parse_program(token_buffer: IterBuffer) -> AstNode:
     begin_node = IdentifierNode('begin')
-    begin_body = pluralize(token_buffer, parse, 'EOF')
-    return ExprListNode(concat([begin_node], begin_body))
+    begin_body: List[AstNode] = []
+    try:
+        while True:
+            begin_body.append(parse(token_buffer))
+    except StopIteration:
+        return ExprListNode(concat([begin_node], begin_body))

@@ -6,7 +6,7 @@ from re import L, compile as regex
 
 # Typing
 
-from typing import List, Dict, Callable, Generator, Iterable, TypeVar, Union, Tuple, Any, Literal, overload
+from typing import List, Dict, Callable, Generator, Iterable, Optional, TypeVar, Union, Tuple, Any, Literal, overload
 # 常用的用来表示泛型类型的字母, 方便后面泛型函数的定义
 T, X, Y = TypeVar('T', covariant=True), TypeVar('X'), TypeVar('Y')
 
@@ -35,11 +35,11 @@ def bind_tail(f: Callable[..., Y], *f_args) -> Callable[[X], Y]:
     return lambda x: f(x, *f_args)
 
 # 筛选掉为 None 的元素
-def not_none(iter: Iterable) -> Iterable:
+def not_none(iter: Iterable[Optional[T]]) -> Iterable[T]:
     return filter(lambda x: x != None, iter)
 
 # 即刻求值 + 筛选非 None 的 map
-def lnmap(f: Callable[[X], Y], iter: Iterable[X]) -> List[Y]:
+def lnmap(f: Callable[[X], Optional[Y]], iter: Iterable[X]) -> List[Y]:
     return list(not_none(map(f, iter)))
 
 # 合并两个字典
