@@ -7,7 +7,7 @@ TokenLiteral = Literal[
     # 'VectorLeftBractet', 
     'LeftBracket', 'RightBracket', 
     'String', 'Character', 'Boolean', 'Number', 
-    'Identifier', 'Dot'
+    'Identifier', 'Dot', 'EOF'
 ]
 
 Token = Tuple[TokenLiteral, str]
@@ -104,4 +104,4 @@ class IterBuffer(Generic[T]):
         return old
 
 def make_lexer(string):
-    return IterBuffer(tokenize, None, string)
+    return IterBuffer(tokenize, ('EOF', ''), string)
