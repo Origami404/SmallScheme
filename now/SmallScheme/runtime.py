@@ -178,7 +178,7 @@ def is_nil(operands: List[SchValue]) -> Boolean:
         return Boolean(True)
     return Boolean(False)
 
-@operands_type([Number], variadic=True)
+@operands_type([], variadic=True)
 def multiply(operands: List[SchValue]) -> Number:
     if len(operands) == 0:
         return Number(1)
