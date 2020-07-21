@@ -97,7 +97,7 @@ def pluralize(token_buffer: IterBuffer, parser: Callable[[IterBuffer], AstNode],
 def pluralize(token_buffer: IterBuffer, parser: Callable[[IterBuffer], AstNode], end_token: List[TokenLiteral]) -> Tuple[TokenLiteral, List[AstNode]]: ...
 def pluralize(token_buffer, parser, end_token):
     results = []
-    ends = make_list(end_token)
+    ends = end_token if isinstance(end_token, list) else [end_token]
     need_return_end = type(end_token) == type([])
 
     while True:

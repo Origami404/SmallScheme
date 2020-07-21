@@ -14,15 +14,6 @@ T, X, Y = TypeVar('T', covariant=True), TypeVar('X'), TypeVar('Y')
 
 from functools import reduce
 
-# 把data变成一个list
-@overload
-def make_list(data: List[T]) -> List[T]: ...
-@overload
-def make_list(data: T) -> List[T]: ...
-
-def make_list(data):
-    return [data] if not isinstance(data, list) else data
-
 for_each = map
 
 # 把 map 返回的 Iterable 变成 list
@@ -67,6 +58,6 @@ __all__ = [
     'TypeVar', 'Union', 'Tuple', 'Any', 'Literal',
     'T', 'X', 'Y',
 
-    'reduce', 'make_list', 'lmap', 'bind_tail', 'not_none', 
+    'reduce', 'lmap', 'bind_tail', 'not_none', 
     'lnmap', 'union', 'concat', 'fprint'
 ]

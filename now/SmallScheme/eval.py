@@ -118,13 +118,16 @@ def eval_quote(operands: List[AstNode], env: EvalEnv) -> SchValue:
 def eval_begin(operands: List[AstNode], env: EvalEnv) -> SchValue:
     return eval_list(operands, env)[-1]
 
+def is_true(v: SchValue) -> bool:
+    return False if isinstance(v, Boolean) and v.data() == False else True
+
 def eval_cond(operands: List[AstNode], env: EvalEnv) -> SchValue:
     for branch in operands:
         branch = branch.as_node(ExprListNode)
         assuming_len(branch.sons, 2)
 
         cond = eval(branch.sons[0], env)
-        if cond:
+        if is_true(cond):
             return eval(branch.sons[1], env)
     return Boolean(False)
 
@@ -140,12 +143,13 @@ def eval_set(operands: List[AstNode], env: EvalEnv) -> SchValue:
 def eval_if(operands: List[AstNode], env: EvalEnv) -> SchValue:
     assuming_len_in(operands, 2, 3)
     cond = eval(operands[0], env)
-    if cond:
+    if is_true(cond):
         return eval(operands[1], env)
-    elif len(operands) == 3:
-        return eval(operands[2], env)
     else:
-        return Boolean(False)
+        if len(operands) == 3:
+            return eval(operands[2], env)
+        else:
+            return Boolean(False)
 
 # ==================== eval_lambda ==============================
 
