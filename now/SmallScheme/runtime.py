@@ -55,8 +55,9 @@ class SchValue(ABC):
         raise RuntimeError('Not impl')
 
     def as_value(self, cls: Type['ValueType']) -> 'ValueType':
-        # 不需要再检查了, 在基本过程开头会有检查的
-        return self # type: ignore
+        if isinstance(self, cls):
+            return self # type: ignore
+        raise RuntimeError(f'Unexpected type: expect: {cls.__name__}, given: {type(self)}')
 
 class AtomValue(Generic[T], SchValue):
     def __init__(self, data: T) -> None:
