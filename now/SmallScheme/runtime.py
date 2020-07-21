@@ -194,7 +194,7 @@ def inital_environment() -> EvalEnv:
         'car': car,
         'cdr': cdr,
         'make-list': make_list,
-        'null?': lambda x: isinstance(x[0], Nil),
+        'null?': is_nil,
         '*': multiply
     }
 
