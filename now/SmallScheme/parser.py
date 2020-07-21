@@ -121,10 +121,10 @@ def parse(token_buffer: IterBuffer) -> AstNode:
     if token == 'LeftBracket':
         return ExprListNode(pluralize(token_buffer, parse, 'RightBracket'))
 
-    if token == 'Number':    return NumberNode(data)
+    if token == 'Number':    return NumberNode(int(data))
     if token == 'String':    return StringNode(data)
     if token == 'Character': return CharacterNode(data)
-    if token == 'Boolean':   return BooleanNode(data)
+    if token == 'Boolean':   return BooleanNode(True if data == '#t' else False)
 
     if token == 'Identifier':
         id_node = IdentifierNode(data)
