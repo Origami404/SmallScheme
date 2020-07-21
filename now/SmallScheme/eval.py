@@ -83,11 +83,9 @@ def eval_define(operands: List[AstNode], env: EvalEnv) -> SchValue:
         name = header.sons[0].as_node(IdentifierNode).data()
         formals = ExprListNode(header.sons[1:])
 
-        lambda_operands: List[AstNode] = [formals]
-        lambda_operands.extend(operands[1:])
-        proc = eval_lambda(lambda_operands, env)
-        
+        proc = make_lambda(formals, operands[1:], env, name)
         env.bind(name, proc)
+
         return Boolean(False)
 
 
@@ -107,7 +105,7 @@ def eval_quote(operands: List[AstNode], env: EvalEnv) -> SchValue:
     
     # ExprList quotion
     quoted = quoted.as_node(ExprListNode)
-    son_values = lmap(bind_tail(eval_quote, env), quoted.sons)
+    son_values = lmap(lambda x: eval_quote([x], env), quoted.sons)
 
     if quoted.is_dot():
         assuming_len_in(quoted.sons, 2, None, 'There must be sth behind a dot.')
@@ -153,7 +151,7 @@ def eval_if(operands: List[AstNode], env: EvalEnv) -> SchValue:
 
 # ==================== eval_lambda ==============================
 
-def make_sch_list(v: List[SchValue] ) -> Union[Pair, Nil]:
+def make_sch_list(v: List[SchValue]) -> Union[Pair, Nil]:
     if len(v) == 0:
         return nil
     return Pair(v[0], make_sch_list(v[1:]))
@@ -220,15 +218,29 @@ def bind_free(formal_ast: AstNode, body: List[AstNode], env: EvalEnv) -> PreEnv:
     
     return reduce(union, map(bind_free, body), {})
 
+def make_lambda(formal: AstNode, bodys: List[AstNode], env: EvalEnv, name: str=None) -> Procedure:
+    env_with_self: EvalEnv = env
+    if name:
+        env_with_self = EvalEnv(env, {name: nil})
+
+    formal_binder = make_binder(formal)
+    free_var_pre_env = bind_free(formal, bodys, env_with_self)
+
+    def func(values: List[SchValue]) -> SchValue:
+        proc_env = EvalEnv(None, formal_binder(values))
+        # 理论上讲这个free_var_pre_env应该是绑定了引用的
+        # 在外层修改它的话可以直接改到它绑定到的东西
+        proc_env.update(free_var_pre_env)
+        return eval_list(bodys, proc_env)[-1]
+
+    # 改变函数自己在free_var_pre_env里的定义
+    proc = Procedure(func)
+    if name:
+        free_var_pre_env[name] = proc
+    return proc
+    
+
 def eval_lambda(operands: List[AstNode], env: EvalEnv) -> Procedure:
     formal_ast, body_asts = operands[0], operands[1:]
 
-    formal_binder = make_binder(formal_ast)
-    free_var_pre_env = bind_free(formal_ast, body_asts, env)
-
-    def func(values: List[SchValue]) -> SchValue:
-        formal_pre_env = formal_binder(values)
-        proc_env = Environment(None, union(formal_pre_env, free_var_pre_env))
-        return eval_list(body_asts, proc_env)[-1]
-
-    return Procedure(func)
+    return make_lambda(formal_ast, body_asts, env, None)

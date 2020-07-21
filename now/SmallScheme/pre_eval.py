@@ -11,6 +11,7 @@ MarcoEnvironment = Environment[Callable[[AstNode], AstNode]]
 # Python 默认是 pass-by-reference 的, env可能会随着传到子节点那里被子节点修改
 # TODO: 修改以使其遵守作用域规则: 目前: 基于代码文本上前后的; 预期: 遵循scope的 
 def pre_eval(ast: AstNode, env: MarcoEnvironment) -> Optional[AstNode]:
+    # print(f'New: {ast.to_scheme()}')
     # 对于单个 Identifier 的宏替换
     if isinstance(ast, IdentifierNode) and env.has(ast.data()):
         transformer = env.get(ast.data())
@@ -102,8 +103,7 @@ def transform(template: AstNode, lexical_binds: LexicalBindings) -> AstNode:
                     trans_sons.extend(binding)
                 else:
                     trans_sons.append(binding)
-            
-            trans_sons.append(transform(son, lexical_binds))
+
         return ExprListNode(trans_sons)
     
     # 单个的ID Marco里面是不可能有...的

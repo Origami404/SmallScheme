@@ -14,9 +14,9 @@ if __name__ == "__main__":
             (cons (proc (car list)) (map proc (cdr list)))))
 
         (define-syntax for-each
-        (syntax-rules (tmp)
+        (syntax-rules (map)
             ((for-each proc l)
-            (map proc l))))
+             (map proc l))))
 
         (display (for-each (lambda (x) (* x x)) '(1 2 3 4)))
         (newline)

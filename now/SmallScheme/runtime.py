@@ -75,9 +75,10 @@ class Character(AtomValue[str]): pass
 class Boolean(AtomValue[bool]):  pass
 
 EvalEnv = Environment[SchValue]
+PySchProcedure = Callable[[List[SchValue]], SchValue]
 
 class Procedure(SchValue):
-    def __init__(self, func: Callable[[List[SchValue]], SchValue]) -> None:
+    def __init__(self, func: PySchProcedure) -> None:
         self.func = func
     
     def call(self, operands: List[SchValue]) -> SchValue:
@@ -104,6 +105,8 @@ class Pair(SchValue):
         ret = [self.car]
         if isinstance(self.cdr, Pair):
             ret.extend(self.cdr.to_list())
+        if isinstance(self.cdr, Nil):
+            ret.append(nil)
         return ret
 
     def to_str(self) -> str:
@@ -121,23 +124,23 @@ ValueType = TypeVar('ValueType', Number, String, Boolean, Symbol, Procedure, Pai
 
 # 基本过程
 
-def assuming_type(operands: List[SchValue], types: List[Type[SchValue]], variadic: bool=False) -> None:
+def assuming_type(operands: List[SchValue], types: List[Type[SchValue]], variadic: bool=False, func_name: str='') -> None:
     expect_len = len(types)
     given_len = len(operands)
     if not variadic and expect_len != given_len:
-        raise RuntimeError(f'Too many or too less operands: expect: {expect_len}, given: {given_len}')
+        raise RuntimeError(f'Too many or too less operands in {func_name}: expect: {expect_len}, given: {given_len}')
     if variadic and given_len < expect_len:
-        raise RuntimeError(f'Too less operands: expect more than: {expect_len}, given: {given_len}')
+        raise RuntimeError(f'Too less operands in {func_name}: expect more than: {expect_len}, given: {given_len}')
 
     for idx, (op, ty) in enumerate(zip(operands, types)):
         if not isinstance(op, ty):
-            raise TypeError(f'Unmatch type in operand {idx}')
+            raise TypeError(f'Unmatch type in operand {idx} in {func_name}, value: {op.to_str()}') # type: ignore
 
 # 手动类型检查装饰器   
 def operands_type(types: List[Type[SchValue]], variadic: bool=False):
     def decorator(func: Callable[[List[SchValue]], SchValue]):
         def wrapper(operands: List[SchValue]):
-            assuming_type(operands, types, variadic)
+            assuming_type(operands, types, variadic, func.__name__)
             return func(operands)
         return wrapper
     return decorator
@@ -158,11 +161,10 @@ def make_pair(operands: List[SchValue]) -> Pair:
 
 @operands_type([Pair])
 def car(operands: List[SchValue]) -> SchValue:
-    return operands[0].car # type: ignore
-
+    return operands[0].as_value(Pair).car
 @operands_type([Pair])
 def cdr(operands: List[SchValue]) -> SchValue:
-    return operands[0].cdr # type: ignore
+    return operands[0].as_value(Pair).cdr
 
 @operands_type([], variadic=True)
 def make_list(operands: List[SchValue]) -> Union[Pair, Nil]:
@@ -176,6 +178,13 @@ def is_nil(operands: List[SchValue]) -> Boolean:
         return Boolean(True)
     return Boolean(False)
 
+@operands_type([Number], variadic=True)
+def multiply(operands: List[SchValue]) -> Number:
+    if len(operands) == 0:
+        return Number(1)
+    return Number(           operands[0].as_value(Number).data() \
+                * multiply(operands[1:]).as_value(Number).data())
+
 def inital_environment() -> EvalEnv:
     primitive_func: Dict[str, Callable[[List[SchValue]], SchValue]] = {
         'display': display, 
@@ -185,7 +194,8 @@ def inital_environment() -> EvalEnv:
         'car': car,
         'cdr': cdr,
         'make-list': make_list,
-        'null?': lambda x: isinstance(x[0], Nil)
+        'null?': lambda x: isinstance(x[0], Nil),
+        '*': multiply
     }
 
     primitive_value: Dict[str, SchValue] = {
@@ -195,7 +205,7 @@ def inital_environment() -> EvalEnv:
 
     env = EvalEnv(None)
     for k, v in primitive_func.items():
-        env.bind(k, Procedure(v))
+        env.bind(k, Procedure(v)) # type: ignore
     
     for k, v in primitive_value.items():
         env.bind(k, v)
