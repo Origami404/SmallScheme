@@ -103,7 +103,8 @@ def transform(template: AstNode, lexical_binds: LexicalBindings) -> AstNode:
                     trans_sons.extend(binding)
                 else:
                     trans_sons.append(binding)
-
+            else:
+                trans_sons.append(son)
         return ExprListNode(trans_sons)
     
     # 单个的ID Marco里面是不可能有...的
