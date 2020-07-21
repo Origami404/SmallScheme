@@ -1,5 +1,5 @@
-from re import S
-from typing import NewType, Generic
+from abc import ABC
+from typing import Generic, Type, Optional
 from . import *
 
 # eval 时的环境, 其实应该就相当于标准库的 ChainMap ?
@@ -30,81 +30,64 @@ class Environment(Generic[T]):
         self.binds = union(self.binds, binds)
         return self
 
-def assuming_len_at_least(l: List[Any], length: int, message: str='Bad syntax') -> None:
-    if len(l) < length:
+# 一些辅助的断言
+def assuming_len_in(l: List[Any], len_min: Optional[int], len_max: Optional[int], message: str='Bad syntax') -> None:
+    if len_min and len(l) < len_min:
+        raise RuntimeError(message)
+    if len_max and len(l) > len_max:
         raise RuntimeError(message)
 
 def not_empty(l: List[Any], message: str='Bad syntax') -> None:
-    assuming_len_at_least(l, 0, message)
+    assuming_len_in(l, 1, None, message)
 
 def assuming_len(l: List[Any], length: int, message: str='Bad syntax') -> None:
-    if len(l) != length:
-        raise RuntimeError(message)
-
+    assuming_len_in(l, length, length, message)
 
 
 # typing definition
-Number = int
-String = str
-Bool   = bool
-Symbol = str
-Procedure = Callable[[List['SchValue'], Environment], 'SchValue']
-Pair = Tuple['SchValue', 'SchValue']
-Nil = None
+class SchValue(ABC):
+    def __init__(self) -> None:
+        pass
 
-SchList = Union[Pair, Nil]
-
-TypeLiteral = Literal[
-    'Number', 'String', 'Bool', 'Symbol', 
-    'Procedure', 'Pair', 'Nil',
-    'SchList'
-]
-ValueType = Union[Number, String, Bool, Symbol, Procedure, Pair, Nil, SchList]
-SchValue = ValueType
-# class SchValue:
-#     def __init__(self, typing: TypeLiteral, value: ValueType, mutable: bool=False):
-#         self.typing = typing
-#         self.value = value
-#         self.mutable = mutable
+class AtomValue(Generic[T], SchValue):
+    def __init__(self, data: T) -> None:
+        self._data = data
     
-#     def is_type(self, typing: TypeLiteral) -> bool:
-#         return self.typing == typing
+    def data(self) -> T:
+        return self._data
 
-#     def change(self, value: 'SchValue'):
-#         if self.typing == 'Bool':
-#             if value.is_type('Bool') and value.get() == False:
-#                 self.value = False
-#             self.value = True
-#         else:
-#             if self.typing != value.typing:
-#                 raise RuntimeError('Type do not match!')
-#             self.value = value.get()
+class Number(AtomValue[int]):    pass
+class String(AtomValue[str]):    pass
+class Symbol(AtomValue[str]):    pass
+class Character(AtomValue[str]): pass
+class Boolean(AtomValue[bool]):  pass
+
+EvalEnv = Environment[SchValue]
+
+class Procedure(SchValue):
+    def __init__(self, func: Callable[[List[SchValue]], SchValue], signature: List[Type['ValueType']]=None) -> None:
+        self.func = func
+        self.signature = signature
     
-#     def get(self) -> ValueType:
-#         return self.value
+    def call(self, operands: List[SchValue]) -> SchValue:
+        if self.signature:
+            # Do type check here
+            pass
+        func = self.func
+        return func(operands)
 
+class Pair(SchValue):
+    def __init__(self, car: SchValue, cdr: SchValue) -> None:
+        self.car = car
+        self.cdr = cdr
+    
+class Nil(SchValue):
+    def __init__(self) -> None:
+        pass
+        # raise RuntimeError('You can not construct a nil')
+nil: Nil = Nil()
 
-def eqv(a: SchValue, b: SchValue) -> Bool:
-    return a == b
-
-def make_pair(first: SchValue, second: SchValue) -> Pair:
-    return (first, second)
-
-def car(pair: Pair) -> SchValue:
-    return pair[0]
-
-def cdr(pair: Pair) -> SchValue:
-    return pair[1]
-
-def make_sch_list(vals: Pair) -> SchList:
-    if vals == []:
-        return None
-    return (vals[0], make_sch_list(vals))
-
-def list_ref(l: Pair, idx: Number) -> SchValue:
-    if idx == 0:
-        return car(l)
-    return list_ref(l, idx - 1)
+ValueType = Union[Number, String, Boolean, Symbol, Procedure, Pair, Nil]
 
 inital_marco = [
 '''
@@ -113,5 +96,4 @@ inital_marco = [
         (define (name args ...)) (define-var name (lambda args ...)) 
         (define name var)        (define-var name var              )))
 '''
-
 ]

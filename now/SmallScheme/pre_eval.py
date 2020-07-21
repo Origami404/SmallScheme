@@ -2,7 +2,7 @@ from re import match
 from . import *
 from .parser import AstNode, ExprListNode, IdentifierNode
 from typing import Generic, Optional, Type
-from .runtime import Environment, assuming_len, assuming_len_at_least, not_empty
+from .runtime import Environment, assuming_len, not_empty
 
 # 处理掉所有的 宏定义 与 宏展开
 
