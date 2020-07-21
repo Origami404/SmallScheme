@@ -4,6 +4,7 @@ from SmallScheme.parser import ExprListNode, parse_program
 from SmallScheme.pre_eval import pre_eval, Environment
 from SmallScheme.eval import eval
 from SmallScheme import fprint
+from SmallScheme.runtime import inital_environment
 
 if __name__ == "__main__":
     program = ''' 
@@ -31,4 +32,4 @@ if __name__ == "__main__":
         raise RuntimeError()
     
     print(trans_ast.to_scheme())
-    print(eval(trans_ast, Environment(None)).to_str())
+    print(eval(trans_ast, inital_environment()).to_str())

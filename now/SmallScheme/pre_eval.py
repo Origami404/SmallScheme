@@ -27,6 +27,10 @@ def pre_eval(ast: AstNode, env: MarcoEnvironment) -> Optional[AstNode]:
                 eval_marco_define(operands, env)
                 return None
             
+            # quote 里的东西不要宏展开
+            if operator.data() == 'quote':
+                return ast
+
             # 如果这个 ExprList 的开头是环境里的 keyword, 就进行 宏展开
             if env.has(operator.data()):
                 transformer = env.get(operator.data())
