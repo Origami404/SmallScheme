@@ -23,13 +23,6 @@ if __name__ == "__main__":
     '''
     token_buffer = make_lexer(program)
     ast = parse_program(token_buffer)
-    print(ast.to_scheme())
-    # fprint(ast.to_dict())
     trans_ast = pre_eval(ast, Environment(None))
-    # fprint(ast.to_dict())
-    # fprint(trans_ast.to_dict())
-    if not trans_ast:
-        raise RuntimeError()
-    
-    print(trans_ast.to_scheme())
-    print(eval(trans_ast, inital_environment()).to_str())
+    if trans_ast:
+        eval(trans_ast, inital_environment())
