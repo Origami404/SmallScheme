@@ -1,3 +1,5 @@
 *.pyc
 old/*
 test.py
+.vscode
+.mypy_cache
