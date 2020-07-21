@@ -203,11 +203,15 @@ def bind_free(formal_ast: AstNode, body: List[AstNode], env: EvalEnv) -> PreEnv:
     else:
         formal_names = extract_names(formal_ast.as_node(ExprListNode).as_list())   
 
+    basic_keyword = ['define', 'lambda', 'cond', 'if', 'begin', 'set!', 'quote']
+    def is_free(name: str) -> bool:
+        return name not in basic_keyword and name not in formal_names
+
     from copy import deepcopy
     def bind_free(ast: AstNode) -> PreEnv:
         if isinstance(ast, ExprListNode):
             return reduce(union, map(bind_free, ast.sons), {})
-        elif isinstance(ast, IdentifierNode) and ast.data() not in formal_names:
+        elif isinstance(ast, IdentifierNode) and is_free(ast.data()):
             # 不拷贝可能在外层free_var对应的binding被set!了之后导致引用它的闭包里面的值的修改
             # 浅拷贝需要考虑引用了外层Pair但是被set-car!之类的情况
             # 所以深拷贝
